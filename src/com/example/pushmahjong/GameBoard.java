@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import com.example.pushmahjong.MahJong.AnimationFinished;
+import com.example.pushmahjong.MahJong.MahjongType;
 
 import tool.ScreenHelper;
 import android.app.Activity;
@@ -20,14 +21,54 @@ import android.widget.RelativeLayout;
 
 public class GameBoard extends RelativeLayout implements AnimationFinished {
 
+	private static final int BASE_SCORE = 100;
 	private final int BOARD_SIZE = 5;
 	private final int LINE_WIDTH = 3;
 	private final int GAP = 10;	// dp
-	private final int SPOT_COUNT = 5;
+	private final int SPOT_COUNT = 3;
 	private final int MOVE_DISTANCE = 10;
 	
 	private Context context;
 	
+	private enum Direction {
+		UP,
+		DOWN,
+		LEFT,
+		RIGHT
+	}
+	private enum BonusType {
+		DUIZI,
+		SANTIAO,
+		SITIAO,
+		LIANGDUI,
+		HULU_INCREASE,
+		HULU_DECREASE,
+		DUIZI_HULU_INCREASE_2,
+		HULU_INCREASE_2,
+		HULU_INCREASE_2_DUIZI,
+		DUIZI_HULU_INCREASE_3,
+		HULU_INCREASE_3,
+		HULU_INCREASE_3_DUIZI,
+		DUIZI_HULU_INCREASE_4,
+		HULU_INCREASE_4,
+		HULU_INCREASE_4_DUIZI,
+		HULU_INCREASE_5,
+		DUIZI_HULU_DECREASE_2,
+		HULU_DECREASE_2,
+		HULU_DECREASE_2_DUIZI,
+		DUIZI_HULU_DECREASE_3,
+		HULU_DECREASE_3,
+		HULU_DECREASE_3_DUIZI,
+		DUIZI_HULU_DECREASE_4,
+		HULU_DECREASE_4,
+		HULU_DECREASE_4_DUIZI,
+		HULU_DECREASE_5,
+		HULU_DUIZI_INCREASE,
+		HULU_DUIZI_DECREASE,
+		SANTIAO_DUIZI,
+		NULL,
+	}
+	private Direction direction;
 	private int gap;
 	private int mjWidth;
 	private int mjHeight;
@@ -38,6 +79,8 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 	private int screenWidth;
 	private int width;
 	private int height;
+	
+	private int score;
 	
 	private Paint paint;
 	private Bitmap bitmap;
@@ -55,6 +98,7 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 	private float moveX;
 	private float moveY;
 	private boolean moved =false;
+	private boolean underanimation =false;
 	private boolean touchable = true;
 	private boolean spotted = false;
 	
@@ -84,6 +128,8 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 		
 		bitmap = Bitmap.createBitmap(screenWidth, screenWidth, Config.ARGB_8888);
 		canvas = new Canvas(bitmap);
+		
+		score = 0;
 	}
 	
 	private int calculateSize() {
@@ -154,8 +200,7 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 	}
 
 	private void checkMoved() {
-		// TODO Auto-generated method stub
-		if (touchable) {
+		if (touchable && !underanimation) {
 			if (moveX > MOVE_DISTANCE) {
 				moveRight();
 			} else if (moveX < -MOVE_DISTANCE) {
@@ -171,11 +216,11 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 		if (moved) {
 			touchable = false;
 			spotted = false;
+			underanimation = true;
 		}
 	}
 
 	private void moveUp() {
-		// TODO Auto-generated method stub
 		// animation first
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			int count = 0;
@@ -183,37 +228,16 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 				if (hasMahJong[i][j] != null) {
 					if (i > count) {
 						hasMahJong[i][j].moveTo(this, count, j);
+						direction = Direction.UP;
 						moved = true;
 					}
 					count++;
 				}
 			}
 		}
-		
-//		MahJong.mahjongType type = MahJong.mahjongType.NULL;
-//		int sameTypeCount = 1;
-//		for (int j = BOARD_SIZE - 1; j >= 0; j--) {
-//			if (hasMahJong[BOARD_SIZE - 1][j] != null) {
-//				type = hasMahJong[BOARD_SIZE - 1][j].getType();
-//				if (type == hasMahJong[BOARD_SIZE - 1][j].getType()) {
-//					// 前面有同样花色的麻将，计数器加1
-//					sameTypeCount++;
-//				} else {
-//					// 不一样，先修改type，如果超过1个，消除那几个麻将
-//					if (sameTypeCount > 1) {
-//						for (int k = j; k < k + sameTypeCount; k++) {
-//							// kick some mahjong
-//							hasMahJong[BOARD_SIZE - 1][k].HideMe(this);
-//						}
-//					}
-//					sameTypeCount = 1;
-//				}
-//			}
-//		}
 	}
 
 	private void moveDown() {
-		// TODO Auto-generated method stub
 		// animation first
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			int count = 0;
@@ -221,6 +245,7 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 				if (hasMahJong[i][j] != null) {
 					if (i < BOARD_SIZE - 1 - count) {
 						hasMahJong[i][j].moveTo(this, BOARD_SIZE - 1 - count, j);
+						direction = Direction.DOWN;
 						moved = true;
 					}
 					count++;
@@ -230,13 +255,128 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 	}
 
 	private void moveLeft() {
-		// TODO Auto-generated method stub
-		
+		// animation first
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			int count = 0;
+			for (int j = 0; j < BOARD_SIZE; j++) {
+				if (hasMahJong[i][j] != null) {
+					if (j > count) {
+						hasMahJong[i][j].moveTo(this, i, count);
+						direction = Direction.LEFT;
+						moved = true;
+					}
+					count++;
+				}
+			}
+		}
 	}
 
 	private void moveRight() {
-		// TODO Auto-generated method stub
-		
+		// animation first
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			int count = 0;
+			for (int j = BOARD_SIZE - 1; j >= 0; j--) {
+				if (hasMahJong[i][j] != null) {
+					if (j < BOARD_SIZE - 1 - count) {
+						hasMahJong[i][j].moveTo(this, i, BOARD_SIZE - 1 - count);
+						direction = Direction.RIGHT;
+						moved = true;
+					}
+					count++;
+				}
+			}
+		}
+	}
+	
+	private boolean kickUp() {
+		// animation first
+		int savedScore = score;
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			int count = 0;
+			BonusType bonusType = BonusType.NULL;
+			MahjongType type = MahjongType.NULL;
+			int savedValue = -1;
+			for (int i = 0; i < BOARD_SIZE; i++) {
+				if (hasMahJong[i][j] == null) {
+					getScoreAndHideMahjonh(count, bonusType, i, j);
+					break;
+				} else {
+					if (i == 0) {
+						type = hasMahJong[i][j].getType();
+					} else {
+						if (hasMahJong[i][j].getType() == type) {
+							count++;
+							bonusType = checkBonus(hasMahJong[i][j].getValue(), 
+									hasMahJong[i][j-1].getValue(), 
+									bonusType,
+									savedValue);
+						} else {
+							getScoreAndHideMahjonh(count, bonusType, i, j);
+							count = 1;
+							type = hasMahJong[i][j].getType();
+						}
+					}
+				}
+			}
+		}
+		if (savedScore < score) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean kickDown() {
+		// animation first
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			int count = 0;
+			for (int i = BOARD_SIZE - 1; i >= 0; i--) {
+				if (hasMahJong[i][j] != null) {
+					if (i < BOARD_SIZE - 1 - count) {
+						hasMahJong[i][j].moveTo(this, BOARD_SIZE - 1 - count, j);
+						direction = Direction.DOWN;
+						moved = true;
+					}
+					count++;
+				}
+			}
+		}
+		return false;
+	}
+	
+	private boolean kickLeft() {
+		// animation first
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			int count = 0;
+			for (int j = 0; j < BOARD_SIZE; j++) {
+				if (hasMahJong[i][j] != null) {
+					if (j > count) {
+						hasMahJong[i][j].moveTo(this, i, count);
+						direction = Direction.LEFT;
+						moved = true;
+					}
+					count++;
+				}
+			}
+		}
+		return false;
+	}
+	
+	private boolean kickRight() {
+		// animation first
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			int count = 0;
+			for (int j = BOARD_SIZE - 1; j >= 0; j--) {
+				if (hasMahJong[i][j] != null) {
+					if (j < BOARD_SIZE - 1 - count) {
+						hasMahJong[i][j].moveTo(this, i, BOARD_SIZE - 1 - count);
+						direction = Direction.RIGHT;
+						moved = true;
+					}
+					count++;
+				}
+			}
+		}
+		return false;
 	}
 	
 	public int getCordinateX(int x) {
@@ -257,10 +397,77 @@ public class GameBoard extends RelativeLayout implements AnimationFinished {
 
 	@Override
 	public void onAnimationFinished() {
-		// TODO Auto-generated method stub
-		if (!spotted) {
-			spotMahJong();
-			spotted = true;
+		// to kick the same mahjong
+		if (kickMahJong()) {
+			
+		} else {
+			if (!spotted) {
+				spotMahJong();
+				spotted = true;
+			}
+		}
+		underanimation = false;
+	}
+
+	private boolean kickMahJong() {
+		switch (direction) {
+		case UP:
+			return kickUp();
+		case DOWN:
+			return kickDown();
+		case LEFT:
+			return kickLeft();
+		case RIGHT:
+			return kickRight();
+		default:
+			return false;
 		}
 	}
+
+	private BonusType checkBonus(int value, int preValue, BonusType bonusType, int savedValue) {
+		if (value == preValue) {
+			// same value
+			switch (bonusType) {
+			case DUIZI:
+				bonusType = BonusType.SANTIAO;
+				break;
+			case SANTIAO:
+				bonusType = BonusType.SITIAO;
+				break;
+			default:
+				bonusType = BonusType.DUIZI;
+				break;
+			}
+		} else if (value == preValue + 1) {
+			bonusType = BonusType.HULU_INCREASE;
+		} else if (value == preValue - 1) {
+			bonusType = BonusType.HULU_DECREASE;
+		}
+		return bonusType;
+	}
+
+	private void getScoreAndHideMahjonh(int count, BonusType bonusType, int i, int j) {
+		if (count > 1) {
+			for (int k = 0; k < count; k++) {
+				switch (direction) {
+				case UP:
+					hasMahJong[i][j-k].HideMe(this);
+					break;
+				case DOWN:
+					hasMahJong[i][j+k].HideMe(this);
+					break;
+				case LEFT:
+					hasMahJong[i-k][j].HideMe(this);
+					break;
+				case RIGHT:
+					hasMahJong[i+k][j].HideMe(this);
+					break;
+				default:
+					break;
+				}
+			}
+			score += count * BASE_SCORE * 2;
+		}
+	}
+
 }

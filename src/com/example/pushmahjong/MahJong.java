@@ -22,9 +22,9 @@ public class MahJong extends ImageView {
 	public static final int ZI_MAX = 3;
 	public static final int TYPE_TOTAL = TONG_TIAO_WAN_MAX * 3 + FENG_MAX + ZI_MAX;
 	public static final int TOTAL = TYPE_TOTAL * 4;
-	private static final long ANIMATION_DURATION = 3000;
+	private static final long ANIMATION_DURATION = 500;
 
-	public enum mahjongType {
+	public enum MahjongType {
 		TONG, // Í²
 		TIAO, // Ìõ
 		WAN, // Íò
@@ -35,7 +35,7 @@ public class MahJong extends ImageView {
 
 	private int id;
 	private int drawableId;
-	private mahjongType type;
+	private MahjongType type;
 	private int value;
 	private int size;
 
@@ -110,26 +110,26 @@ public class MahJong extends ImageView {
 		int id = this.id % TYPE_TOTAL;
 		drawableId = drawableIds[id];
 		if (id < TONG_TIAO_WAN_MAX - 1) {
-			type = mahjongType.TONG;
+			type = MahjongType.TONG;
 			value = id;
 		} else if (id < TONG_TIAO_WAN_MAX * 2 - 1) {
-			type = mahjongType.TIAO;
+			type = MahjongType.TIAO;
 			value = id - TONG_TIAO_WAN_MAX;
 		} else if (id < TONG_TIAO_WAN_MAX * 3 - 1) {
-			type = mahjongType.WAN;
+			type = MahjongType.WAN;
 			value = id - TONG_TIAO_WAN_MAX * 2;
 		} else if (id < TONG_TIAO_WAN_MAX * 3 + FENG_MAX - 1) {
-			type = mahjongType.FENG;
+			type = MahjongType.FENG;
 			value = id - TONG_TIAO_WAN_MAX * 3;
 		} else {
-			type = mahjongType.ZI;
+			type = MahjongType.ZI;
 			value = id - TONG_TIAO_WAN_MAX * 3 - FENG_MAX;
 		}
 		
 		setImageResource(drawableId);
 	}
 
-	public int getMaxValue(mahjongType t) {
+	public int getMaxValue(MahjongType t) {
 		int retValue = 0;
 		switch (t) {
 		case TONG:
@@ -183,11 +183,11 @@ public class MahJong extends ImageView {
 		}
 	}
 	
-	public mahjongType getType() {
+	public MahjongType getType() {
 		return type;
 	}
 
-	public void setType(mahjongType type) {
+	public void setType(MahjongType type) {
 		this.type = type;
 	}
 
